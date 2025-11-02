@@ -56,10 +56,19 @@ app = FastAPI(
 # Configure CORS
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["http://localhost:5173", "http://localhost:3000"],  # Vite default port and common alternatives
+    allow_origins=[
+        "http://localhost:5173", 
+        "http://localhost:3000", 
+        "http://localhost:3001",  # Add port 3001
+        "http://127.0.0.1:5173", 
+        "http://127.0.0.1:3000",
+        "http://127.0.0.1:3001"   # Add 127.0.0.1:3001
+    ],
     allow_credentials=True,
-    allow_methods=["*"],
+    allow_methods=["GET", "POST", "PUT", "DELETE", "OPTIONS", "PATCH"],
     allow_headers=["*"],
+    expose_headers=["*"],
+    max_age=3600,
 )
 
 @app.get("/")
@@ -67,9 +76,14 @@ async def root():
     """Root endpoint - API health check"""
     return {
         "message": "HeartSense API is running",
-        "version": "1.0.0",
+        "version": "2.0.0",
         "status": "healthy"
     }
+
+@app.get("/health")
+async def health_check():
+    """Health check endpoint"""
+    return {"status": "healthy", "service": "HeartSense API"}
 
 @app.get("/health")
 async def health_check():
@@ -88,6 +102,19 @@ async def get_current_user_from_token(credentials: HTTPAuthorizationCredentials 
 
 
 # === Authentication Endpoints ===
+
+# OPTIONS handlers for CORS preflight
+@app.options("/api/auth/signup")
+@app.options("/api/auth/signin")
+@app.options("/api/auth/signout")
+@app.options("/api/auth/refresh")
+@app.options("/api/auth/me")
+@app.options("/api/chat/message")
+@app.options("/api/user/sessions")
+@app.options("/api/user/sessions/{session_id}")
+async def options_handler():
+    """Handle OPTIONS requests for CORS preflight"""
+    return {}
 
 @app.post("/api/auth/signup", response_model=AuthResponse)
 async def signup(user_data: UserSignUp):

@@ -1,14 +1,21 @@
 import React, { useEffect, useState } from 'react';
 import { ChatSession } from '../types';
 import { authenticatedFetch } from '../services/authService';
-import { RefreshIcon } from './icons/RefreshIcon';
+import { RefreshIcon } from '../components/icons/RefreshIcon';
 
 interface SessionsPageProps {
-  onSelectSession: (sessionId: string) => void;
+  onSelectSession: (sessionId: string, session?: ChatSession) => void;
   onStartNewSession: () => void;
+  isLoadingSession?: boolean;
+  currentSessionId?: string;
 }
 
-export const SessionsPage: React.FC<SessionsPageProps> = ({ onSelectSession, onStartNewSession }) => {
+export const SessionsPage: React.FC<SessionsPageProps> = ({ 
+  onSelectSession, 
+  onStartNewSession,
+  isLoadingSession = false,
+  currentSessionId
+}) => {
   const [sessions, setSessions] = useState<ChatSession[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState('');
@@ -94,6 +101,16 @@ export const SessionsPage: React.FC<SessionsPageProps> = ({ onSelectSession, onS
 
   return (
     <div className="w-full max-w-4xl mx-auto p-6">
+      {/* Loading overlay */}
+      {isLoadingSession && (
+        <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-50">
+          <div className="bg-white rounded-2xl p-8 shadow-2xl flex flex-col items-center gap-4">
+            <div className="animate-spin rounded-full h-16 w-16 border-b-4 border-rose-500"></div>
+            <p className="text-lg font-medium text-gray-800">Loading your conversation...</p>
+          </div>
+        </div>
+      )}
+      
       <div className="bg-white/80 backdrop-blur-md rounded-2xl shadow-xl p-8 border border-rose-200/50">
         {/* Header */}
         <div className="flex items-center justify-between mb-6">
@@ -148,8 +165,12 @@ export const SessionsPage: React.FC<SessionsPageProps> = ({ onSelectSession, onS
             {sessions.map((session) => (
               <div
                 key={session.session_id}
-                onClick={() => onSelectSession(session.session_id)}
-                className="p-5 bg-gradient-to-r from-rose-50 to-pink-50 rounded-xl border border-rose-200 hover:border-rose-300 hover:shadow-md transition-all cursor-pointer"
+                onClick={() => onSelectSession(session.session_id, session)}
+                className={`p-5 bg-gradient-to-r from-rose-50 to-pink-50 rounded-xl border transition-all cursor-pointer ${
+                  currentSessionId === session.session_id
+                    ? 'border-rose-400 shadow-lg ring-2 ring-rose-300'
+                    : 'border-rose-200 hover:border-rose-300 hover:shadow-md'
+                }`}
               >
                 <div className="flex items-start justify-between">
                   <div className="flex-1">

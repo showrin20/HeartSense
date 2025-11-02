@@ -1,7 +1,7 @@
 import React from 'react';
 import type { Analysis, Language } from '../types';
-import { RefreshIcon } from './icons/RefreshIcon';
-import { ShareIcon } from './icons/ShareIcon';
+import { RefreshIcon } from '../components/icons/RefreshIcon';
+import { ShareIcon } from '../components/icons/ShareIcon';
 
 interface TutorAnalysisProps {
     analysis: Analysis | null;
@@ -79,7 +79,7 @@ const AnalysisCard: React.FC<{ analysis: Analysis; language: Language }> = ({ an
     );
 };
 
-export const TutorAnalysis: React.FC<TutorAnalysisProps> = ({ analysis, onStartNew, language }) => {
+export const TutorPage: React.FC<TutorAnalysisProps> = ({ analysis, onStartNew, language }) => {
     if (!analysis) {
         return (
             <div className="text-center p-8">

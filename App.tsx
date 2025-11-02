@@ -1,15 +1,15 @@
 import React, { useState, useEffect } from 'react';
-import type { Message, Analysis, View, PartnerPersonality, Language, User, SignUpData, SignInData } from './types';
+import type { Message, Analysis, View, PartnerPersonality, Language, User, SignUpData, SignInData, ChatSession } from './types';
 import { initializePartnerChat, getPartnerResponse, getTutorAnalysis } from './services/geminiService';
 import { signUp, signIn, signOut, isAuthenticated, getUser } from './services/authService';
 import { Navbar } from './components/Navbar';
 import { Header } from './components/Header';
-import { ChatInterface } from './components/ChatInterface';
-import { TutorAnalysis } from './components/TutorAnalysis';
-import { LandingPage } from './components/LandingPage';
 import { PartnerSetup } from './components/PartnerSetup';
-import { AuthPage } from './components/AuthPage';
-import { SessionsPage } from './components/SessionsPage';
+import { ChatPage } from './pages/ChatPage';
+import { TutorPage } from './pages/TutorPage';
+import { LandingPage } from './pages/LandingPage';
+import { AuthPage } from './pages/AuthPage';
+import { SessionsPage } from './pages/SessionsPage';
 
 export default function App() {
     const [messages, setMessages] = useState<Message[]>([]);
@@ -145,31 +145,59 @@ export default function App() {
         setView('landing');
     };
 
-    const handleSelectSession = (selectedSessionId: string) => {
-        setSessionId(selectedSessionId);
-        // Load session messages if needed
-        setView('chatting');
+    const handleSelectSession = async (selectedSessionId: string, session?: ChatSession) => {
+        setIsLoading(true);
+        try {
+            setSessionId(selectedSessionId);
+            
+            // Set language and personality from session if available
+            if (session?.language) {
+                setLanguage(session.language);
+            }
+            
+            // Load chat history
+            const { loadChatHistory } = await import('./services/geminiService');
+            const history = await loadChatHistory(selectedSessionId);
+            
+            // Set messages to the loaded history
+            setMessages(history);
+            
+            // Navigate to chat view
+            setView('chatting');
+        } catch (error) {
+            console.error('Failed to load session:', error);
+            alert('Failed to load session. Please try again.');
+        } finally {
+            setIsLoading(false);
+        }
     };
 
     const renderContent = () => {
         switch (view) {
             case 'landing':
-                return <LandingPage onStart={handleStartSetup} />;
+                return (
+                    <LandingPage 
+                        onStart={handleStartSetup} 
+                        isAuthenticated={isAuthenticated()}
+                        onSignIn={() => setView('auth')}
+                    />
+                );
             case 'auth':
                 return <AuthPage onSignIn={handleSignIn} onSignUp={handleSignUp} />;
             case 'partner-setup':
                 return <PartnerSetup onFinishSetup={handleFinishSetup} />;
             case 'chatting':
                 return (
-                    <ChatInterface
+                    <ChatPage
                         messages={messages}
                         isLoading={isLoading}
                         onSendMessage={handleUserInput}
+                        onBackToSessions={() => setView('sessions')}
                     />
                 );
             case 'tutor':
                 return (
-                    <TutorAnalysis
+                    <TutorPage
                         analysis={analysis}
                         onStartNew={handleStartNewSession}
                         language={language}
@@ -180,6 +208,8 @@ export default function App() {
                     <SessionsPage
                         onSelectSession={handleSelectSession}
                         onStartNewSession={handleStartSetup}
+                        isLoadingSession={isLoading}
+                        currentSessionId={sessionId}
                     />
                 );
             default:

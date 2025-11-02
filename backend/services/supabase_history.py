@@ -8,7 +8,7 @@ from dotenv import load_dotenv
 load_dotenv()
 
 # Supabase configuration
-SUPABASE_URL = os.environ.get("SUPABASE_URL", "postgresql://postgres:62110lol@db.auqhuozialxppjnpuioa.supabase.co:5432/postgres")
+SUPABASE_URL = os.environ.get("SUPABASE_URL", "https://auqhuozialxppjnpuioa.supabase.co")
 SUPABASE_KEY = os.environ.get("SUPABASE_KEY")
 
 # PostgreSQL connection string for Supabase
@@ -66,6 +66,11 @@ class SupabaseChatMessageHistory:
     
     def get_messages(self) -> List[BaseMessage]:
         """Retrieve all messages for this session"""
+        return self.history.messages
+    
+    @property
+    def messages(self) -> List[BaseMessage]:
+        """Property to access messages directly (for compatibility)"""
         return self.history.messages
     
     def clear(self) -> None:

@@ -1,16 +1,22 @@
 import React, { useState, useRef, useEffect } from 'react';
 import type { Message } from '../types';
-import { SendIcon } from './icons/SendIcon';
-import { UserIcon } from './icons/UserIcon';
-import { HeartIcon } from './icons/HeartIcon';
+import { SendIcon } from '../components/icons/SendIcon';
+import { UserIcon } from '../components/icons/UserIcon';
+import { HeartIcon } from '../components/icons/HeartIcon';
 
 interface ChatInterfaceProps {
     messages: Message[];
     isLoading: boolean;
     onSendMessage: (input: string) => void;
+    onBackToSessions?: () => void;
 }
 
-export const ChatInterface: React.FC<ChatInterfaceProps> = ({ messages, isLoading, onSendMessage }) => {
+export const ChatPage: React.FC<ChatInterfaceProps> = ({ 
+    messages, 
+    isLoading, 
+    onSendMessage,
+    onBackToSessions 
+}) => {
     const [input, setInput] = useState('');
     const chatEndRef = useRef<HTMLDivElement>(null);
 
@@ -30,6 +36,21 @@ export const ChatInterface: React.FC<ChatInterfaceProps> = ({ messages, isLoadin
 
     return (
         <div className="flex flex-col h-full max-w-3xl mx-auto w-full bg-white/50 rounded-2xl shadow-lg backdrop-blur-lg overflow-hidden border border-rose-200/50">
+            {/* Header with back button */}
+            {onBackToSessions && (
+                <div className="p-3 border-b border-rose-200/50 bg-white/60 flex items-center gap-2">
+                    <button
+                        onClick={onBackToSessions}
+                        className="flex items-center gap-2 px-3 py-2 text-gray-700 hover:text-rose-600 hover:bg-rose-50 rounded-lg transition-colors"
+                    >
+                        <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
+                        </svg>
+                        <span className="text-sm font-medium">All Sessions</span>
+                    </button>
+                </div>
+            )}
+            
             <div className="flex-grow p-4 md:p-6 space-y-4 overflow-y-auto">
                 {messages.map((msg, index) => (
                     <div key={index} className={`flex items-end gap-3 ${msg.role === 'user' ? 'justify-end' : 'justify-start'}`}>

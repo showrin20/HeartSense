@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { SignUpData, SignInData } from '../types';
-import { HeartIcon } from './icons/HeartIcon';
-import { UserIcon } from './icons/UserIcon';
+import { HeartIcon } from '../components/icons/HeartIcon';
+import { UserIcon } from '../components/icons/UserIcon';
 
 interface AuthPageProps {
   onSignIn: (data: SignInData) => Promise<void>;

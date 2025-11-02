@@ -44,6 +44,7 @@ const baseSystemInstructionEnglish = `You are HeartSense, an emotionally intelli
 - NEVER cross ethical or adult boundaries. Keep the conversation focused on emotional connection, support, and healthy relationship dynamics. Do not be overly explicit or inappropriate.`;
 
 
+
 const generateSystemInstruction = (personality: PartnerPersonality, language: Language): string => {
     const baseInstruction = language === 'banglish' ? baseSystemInstructionBanglish : baseSystemInstructionEnglish;
     let instruction = `${baseInstruction}\n\nYour specific personality for this conversation is defined by the user.`;
@@ -209,7 +210,7 @@ export const getTutorAnalysis = async (history: Message[], language: Language): 
 
 export const getSessionHistory = async (sessionId: string): Promise<Message[]> => {
     try {
-        const response = await fetch(`${API_BASE_URL}/api/chat/history/${sessionId}`);
+        const response = await authenticatedFetch(`${API_BASE_URL}/api/chat/history/${sessionId}`);
         
         if (!response.ok) {
             throw new Error('Failed to get session history');
@@ -220,6 +221,23 @@ export const getSessionHistory = async (sessionId: string): Promise<Message[]> =
     } catch (error) {
         console.error('Get session history error:', error);
         return [];
+    }
+};
+
+export const loadChatHistory = async (sessionId: string): Promise<Message[]> => {
+    try {
+        const response = await authenticatedFetch(`${API_BASE_URL}/api/chat/history/${sessionId}`);
+        
+        if (!response.ok) {
+            throw new Error('Failed to load chat history');
+        }
+
+        const data = await response.json();
+        // The backend returns messages with role and text properties
+        return data.messages || [];
+    } catch (error) {
+        console.error('Load chat history error:', error);
+        throw error;
     }
 };
 

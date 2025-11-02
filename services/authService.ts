@@ -41,6 +41,8 @@ export const signUp = async (data: SignUpData): Promise<AuthResponse> => {
   try {
     const response = await fetch(`${API_BASE_URL}/api/auth/signup`, {
       method: 'POST',
+      mode: 'cors',
+      credentials: 'include',
       headers: {
         'Content-Type': 'application/json',
       },
@@ -70,6 +72,8 @@ export const signIn = async (data: SignInData): Promise<AuthResponse> => {
   try {
     const response = await fetch(`${API_BASE_URL}/api/auth/signin`, {
       method: 'POST',
+      mode: 'cors',
+      credentials: 'include',
       headers: {
         'Content-Type': 'application/json',
       },
@@ -102,8 +106,11 @@ export const signOut = async (): Promise<void> => {
     if (token) {
       await fetch(`${API_BASE_URL}/api/auth/signout`, {
         method: 'POST',
+        mode: 'cors',
+        credentials: 'include',
         headers: {
           'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json',
         },
       });
     }
@@ -126,6 +133,8 @@ export const refreshAccessToken = async (): Promise<string> => {
 
     const response = await fetch(`${API_BASE_URL}/api/auth/refresh`, {
       method: 'POST',
+      mode: 'cors',
+      credentials: 'include',
       headers: {
         'Content-Type': 'application/json',
       },
@@ -158,8 +167,11 @@ export const getCurrentUser = async (): Promise<User> => {
 
     const response = await fetch(`${API_BASE_URL}/api/auth/me`, {
       method: 'GET',
+      mode: 'cors',
+      credentials: 'include',
       headers: {
         'Authorization': `Bearer ${token}`,
+        'Content-Type': 'application/json',
       },
     });
 
@@ -188,13 +200,21 @@ export const authenticatedFetch = async (
     throw new Error('Not authenticated');
   }
 
-  // Add authorization header
+  // Add authorization header and CORS settings
   const headers = {
+    'Content-Type': 'application/json',
     ...options.headers,
     'Authorization': `Bearer ${token}`,
   };
 
-  let response = await fetch(url, { ...options, headers });
+  const fetchOptions: RequestInit = {
+    ...options,
+    mode: 'cors',
+    credentials: 'include',
+    headers,
+  };
+
+  let response = await fetch(url, fetchOptions);
 
   // If unauthorized, try to refresh token
   if (response.status === 401) {
@@ -203,11 +223,17 @@ export const authenticatedFetch = async (
       
       // Retry request with new token
       const newHeaders = {
+        'Content-Type': 'application/json',
         ...options.headers,
         'Authorization': `Bearer ${token}`,
       };
       
-      response = await fetch(url, { ...options, headers: newHeaders });
+      response = await fetch(url, { 
+        ...options, 
+        mode: 'cors',
+        credentials: 'include',
+        headers: newHeaders 
+      });
     } catch (error) {
       // Refresh failed, redirect to login
       clearAuthTokens();
