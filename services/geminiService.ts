@@ -1,5 +1,6 @@
 import { GoogleGenAI, Chat, Type } from "@google/genai";
 import type { Message, Analysis, PartnerPersonality, Language } from '../types';
+import { authenticatedFetch } from './authService';
 
 if (!process.env.API_KEY) {
     console.warn("API_KEY environment variable not set.");
@@ -61,25 +62,62 @@ const generateSystemInstruction = (personality: PartnerPersonality, language: La
 
 
 let chat: Chat | null = null;
+const API_BASE_URL = 'http://localhost:8000';
 
-export const initializePartnerChat = (personality: PartnerPersonality, language: Language) => {
-    const systemInstruction = generateSystemInstruction(personality, language);
-    chat = ai.chats.create({
-        model: 'gemini-2.5-flash',
-        config: {
-            systemInstruction: systemInstruction,
-        },
-    });
+export const initializePartnerChat = async (personality: PartnerPersonality, language: Language, sessionId?: string): Promise<string> => {
+    try {
+        const response = await authenticatedFetch(`${API_BASE_URL}/api/chat/message`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({
+                message: '',  // Empty message for initialization
+                personality: personality,
+                language: language.toLowerCase(),  // Ensure lowercase
+                session_id: sessionId,
+            }),
+        });
+
+        if (!response.ok) {
+            const errorData = await response.json().catch(() => ({ detail: 'Failed to initialize chat' }));
+            console.error('Initialize chat error:', errorData);
+            throw new Error(errorData.detail || 'Failed to initialize chat');
+        }
+
+        const data = await response.json();
+        return data.session_id;
+    } catch (error) {
+        console.error('Initialize chat error:', error);
+        throw error;
+    }
 };
 
-export const getPartnerResponse = async (newMessage: string): Promise<string> => {
-    if (!chat) {
-        // This should not happen if initializePartnerChat is called correctly
-        throw new Error("Chat not initialized. Please select a partner personality first.");
+export const getPartnerResponse = async (newMessage: string, sessionId: string): Promise<string> => {
+    try {
+        const response = await authenticatedFetch(`${API_BASE_URL}/api/chat/message`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({
+                message: newMessage,
+                session_id: sessionId,
+            }),
+        });
+
+        if (!response.ok) {
+            const errorData = await response.json().catch(() => ({ detail: 'Failed to get response' }));
+            console.error('Get partner response error:', errorData);
+            throw new Error(errorData.detail || 'Failed to get response');
+        }
+
+        const data = await response.json();
+        return data.message.text;
+    } catch (error) {
+        console.error('Get partner response error:', error);
+        throw error;
     }
-    
-    const response = await chat.sendMessage({ message: newMessage });
-    return response.text;
 };
 
 export const getTutorAnalysis = async (history: Message[], language: Language): Promise<Analysis> => {
@@ -166,5 +204,34 @@ export const getTutorAnalysis = async (history: Message[], language: Language): 
             idealPartner: "Could not generate analysis.",
             tips: ["There was an error analyzing the conversation. Please try again."]
         };
+    }
+};
+
+export const getSessionHistory = async (sessionId: string): Promise<Message[]> => {
+    try {
+        const response = await fetch(`${API_BASE_URL}/api/chat/history/${sessionId}`);
+        
+        if (!response.ok) {
+            throw new Error('Failed to get session history');
+        }
+
+        const data = await response.json();
+        return data.messages || [];
+    } catch (error) {
+        console.error('Get session history error:', error);
+        return [];
+    }
+};
+
+export const clearSessionHistory = async (sessionId: string): Promise<boolean> => {
+    try {
+        const response = await fetch(`${API_BASE_URL}/api/chat/history/${sessionId}`, {
+            method: 'DELETE',
+        });
+
+        return response.ok;
+    } catch (error) {
+        console.error('Clear session history error:', error);
+        return false;
     }
 };
