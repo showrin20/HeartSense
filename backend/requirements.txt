@@ -1,23 +1,36 @@
-# Core framework
-fastapi>=0.115.0,<0.120.0
-uvicorn[standard]>=0.34.0,<1.0.0
-pydantic>=2.9.0,<3.0.0
-python-dotenv>=1.0.0
-python-multipart>=0.0.20
+# Core FastAPI and server
+fastapi==0.115.5
+uvicorn[standard]==0.32.1
+python-multipart==0.0.19
 
-# LangChain (install core first, then extensions)
-langchain>=0.3.0,<0.4.0
-langchain-community>=0.3.0,<0.4.0
-langchain-google-genai>=2.0.0,<3.0.0
-
-# Google AI
-google-genai>=1.28.0
+# Authentication & Security
+pyjwt==2.10.1
+passlib[bcrypt]==1.7.4
+python-jose[cryptography]==3.3.0
 
 # Database
-supabase>=2.20.0
-psycopg2-binary>=2.9.0
+supabase==2.10.0
+psycopg2-binary==2.9.10
+sqlalchemy==2.0.36
 
-# Authentication
-python-jose[cryptography]>=3.3.0
-passlib[bcrypt]>=1.7.4
-email-validator>=2.0.0
+# Google AI - FIXED VERSION COMPATIBILITY
+google-generativeai==0.8.3
+langchain-google-genai==2.0.5
+
+# LangChain Core
+langchain==0.3.13
+langchain-core==0.3.28
+langchain-community==0.3.13
+
+# HTTP & API
+httpx==0.27.2
+requests==2.32.3
+
+# Environment & Configuration
+python-dotenv==1.0.1
+pydantic==2.10.3
+pydantic-settings==2.6.1
+email-validator==2.2.0
+
+# CORS
+starlette==0.41.3

@@ -1,174 +1,216 @@
-## 🚀 Run Locally
+# HeartSense 💝
 
-### Prerequisites
-- **Node.js** (for frontend)
-- **Python 3.11+** (for backend)
-- **Gemini API Key** (get from [Google AI Studio](https://makersuite.google.com/app/apikey))
-- **Supabase Account** (for persistent chat history)
+An AI-powered emotional intelligence platform that helps you practice and improve your relationship communication skills through realistic conversations with a customizable AI partner.
 
----
+## Features
 
-## 📦 Setup Instructions
+- 🤖 **AI Partner Conversations** - Practice emotional communication with a personalized AI partner
+- 🎭 **Personality Customization** - Choose from 4 archetypes and customize personality traits
+- 🌏 **Bilingual Support** - Chat in English or Banglish (Bengali + English)
+- 📊 **Emotional Intelligence Analysis** - Get detailed feedback on your communication skills
+- 💬 **Session History** - Resume previous conversations anytime, just like ChatGPT
+- 🔐 **Secure Authentication** - JWT-based user authentication
 
-### 1️⃣ Backend Setup
+## Tech Stack
 
-#### Step 1: Navigate to backend directory
-```bash
-cd backend
-```
-
-#### Step 2: Install Python dependencies
-```bash
-pip install -r requirements.txt
-```
-
-#### Step 3: Set up Supabase Database
-Go to your [Supabase SQL Editor](https://supabase.com/dashboard/project/auqhuozialxppjnpuioa/sql) and run:
-
-```sql
-CREATE TABLE IF NOT EXISTS message_history (
-    id SERIAL PRIMARY KEY,
-    session_id TEXT NOT NULL,
-    message JSONB NOT NULL,
-    created_at TIMESTAMP WITH TIME ZONE DEFAULT TIMEZONE('utc'::text, NOW()) NOT NULL
-);
-
-CREATE INDEX IF NOT EXISTS idx_message_history_session_id ON message_history(session_id);
-
-ALTER TABLE message_history ENABLE ROW LEVEL SECURITY;
-
-CREATE POLICY "Allow all operations on message_history" ON message_history
-FOR ALL USING (true) WITH CHECK (true);
-```
-
-#### Step 4: Configure environment variables
-Create a `.env` file in the `backend` directory:
-
-```env
-GEMINI_API_KEY=your_gemini_api_key_here
-SUPABASE_URL=https://auqhuozialxppjnpuioa.supabase.co
-SUPABASE_KEY=your_supabase_anon_key_here
-SUPABASE_DB_URL=postgresql://postgres:YOUR_PASSWORD@db.auqhuozialxppjnpuioa.supabase.co:5432/postgres
-```
-
-#### Step 5: Run the backend server
-```bash
-python main.py
-```
-
-The backend API will be available at: **http://localhost:8000**
-
-API Documentation: **http://localhost:8000/docs**
-
----
-
-### 2️⃣ Frontend Setup
-
-#### Step 1: Install dependencies
-```bash
-npm install
-```
-
-#### Step 2: Set environment variables
-Create a `.env.local` file in the root directory:
-
-```env
-VITE_GEMINI_API_KEY=your_gemini_api_key_here
-```
-
-#### Step 3: Run the frontend app
-```bash
-npm run dev
-```
-
-The frontend will be available at: **http://localhost:3000**
-
----
-
-## 🎯 Quick Start
-
-### Option 1: Run Both (Recommended)
-
-**Terminal 1 - Backend:**
-```bash
-cd backend
-python main.py
-```
-
-**Terminal 2 - Frontend:**
-```bash
-npm run dev
-```
-
-Then open: **http://localhost:3000**
-
----
-
-## 📚 Documentation
-
-- **[API Routes Guide](backend/API_ROUTES.md)** - Complete API endpoint documentation
-- **[Session History Routes](backend/SESSION_HISTORY_ROUTES.md)** - Session management API
-- **[Setup Guide](backend/SETUP_GUIDE.md)** - Detailed LangChain + Supabase setup
-- **[Integration Summary](INTEGRATION_SUMMARY.md)** - Architecture and changes overview
-
----
-
-## 🔧 Technology Stack
-
-### Frontend
-- React + TypeScript
+**Frontend:**
+- React 19.2 + TypeScript
 - Vite
 - Tailwind CSS
 
-### Backend
+**Backend:**
 - FastAPI (Python)
-- LangChain (for conversation management)
-- Google Gemini 2.0 (AI model)
-- Supabase PostgreSQL (persistent storage)
+- Google Gemini AI
+- Supabase (PostgreSQL)
+- LangChain
 
----
+## Prerequisites
 
-## 🌟 Features
+- **Node.js** 18+ and npm
+- **Python** 3.11 or 3.13
+- **Supabase Account** (for database)
+- **Google Gemini API Key** (for AI)
 
-- 💬 AI-powered romantic partner conversations
-- 🎭 Customizable personality traits (playful, talkative, affectionate)
-- 🌐 Banglish & English language support
-- 📊 Emotional intelligence analysis
-- 💾 Persistent chat history with sessions
-- 🔄 Multi-session support with UUID tracking
+## Quick Start
 
----
+### 1. Clone the Repository
 
-## 🔗 API Endpoints
+```bash
+git clone https://github.com/showrin20/HeartSense.git
+cd HeartSense
+```
 
-- `POST /api/chat/message` - Send messages & initialize chat
-- `GET /api/chat/history/{session_id}` - Retrieve session history
-- `DELETE /api/chat/history/{session_id}` - Delete session
-- `POST /api/analysis/tutor` - Get emotional intelligence feedback
-- `GET /health` - Server health check
+### 2. Backend Setup
 
-For full API documentation, visit: http://localhost:8000/docs
+#### Install Dependencies
 
----
+```bash
+cd backend
 
-## 🐛 Troubleshooting
+# Create virtual environment (recommended)
+python3 -m venv venv
+source venv/bin/activate  # On Windows: venv\Scripts\activate
 
-### Backend won't start?
-- Ensure all Python packages are installed: `pip install -r requirements.txt`
-- Check your `.env` file has all required variables
-- Verify Supabase table was created successfully
+# Install packages
+pip install -r requirements.txt
+```
 
-### Frontend can't connect to backend?
+#### Configure Environment Variables
+
+Create a `.env` file in the `backend/` directory:
+
+```bash
+cp .env.example .env
+```
+
+Edit `.env` with your actual credentials:
+
+```env
+# Gemini API Key
+GEMINI_API_KEY=your_gemini_api_key_here
+
+# Supabase Configuration
+SUPABASE_URL=https://your-project-ref.supabase.co
+SUPABASE_KEY=your_supabase_anon_key_here
+
+# Supabase Database Connection (use POOLER for production)
+SUPABASE_DB_URL=postgresql://postgres.your-project-ref:your-password@aws-0-region.pooler.supabase.com:6543/postgres
+
+# JWT Secret Key (generate with: python -c "import secrets; print(secrets.token_urlsafe(32))")
+JWT_SECRET_KEY=your_jwt_secret_key_here
+```
+
+#### Run Backend Server
+
+```bash
+# Make sure you're in the backend directory
+cd backend
+
+# Activate virtual environment if not already activated
+source venv/bin/activate  # On Windows: venv\Scripts\activate
+
+# Start the server
+uvicorn main:app --host 0.0.0.0 --port 8000 --reload
+```
+
+The backend will be running at: **http://localhost:8000**
+
+### 3. Frontend Setup
+
+#### Install Dependencies
+
+Open a **new terminal** (keep backend running):
+
+```bash
+# Go to project root
+cd HeartSense
+
+# Install frontend dependencies
+npm install
+```
+
+#### Run Frontend
+
+```bash
+# Make sure you're in the project root directory
+npm run dev
+```
+
+The frontend will be running at: **http://localhost:5173** (or another port if 5173 is busy)
+
+## Running Both Together
+
+### Terminal 1 - Backend:
+```bash
+cd HeartSense/backend
+source venv/bin/activate
+uvicorn main:app --host 0.0.0.0 --port 8000 --reload
+```
+
+### Terminal 2 - Frontend:
+```bash
+cd HeartSense
+npm run dev
+```
+
+Then open your browser to: **http://localhost:5173**
+
+## Database Setup
+
+1. Create a Supabase project at [supabase.com](https://supabase.com)
+2. Run the SQL scripts in `backend/database/` in order:
+   - `02_create_tables.sql` - Creates tables
+   - `03_enable_rls.sql` - Enables Row Level Security
+   - `04_create_policies.sql` - Creates security policies
+3. Get your credentials from Supabase Dashboard > Settings > API
+
+## Troubleshooting
+
+### Backend Issues
+
+**Error: `ModuleNotFoundError: No module named 'email_validator'`**
+```bash
+pip install email-validator==2.2.0
+```
+
+**Error: `could not translate host name`**
+- Make sure you're using the POOLER connection string format
+- Check if your Supabase project is active (not paused)
+
+**Error: `Dependency conflicts`**
+- Make sure you're using a clean virtual environment
+- Try: `pip install --upgrade pip` then `pip install -r requirements.txt`
+
+### Frontend Issues
+
+**Error: `Failed to fetch`**
 - Make sure backend is running on port 8000
 - Check CORS settings in `backend/main.py`
 
-### Database connection errors?
-- Verify your `SUPABASE_DB_URL` in `.env`
-- Check your Supabase project is active
-- Ensure the `message_history` table exists
+**Port already in use**
+- Frontend: Change port in `vite.config.ts`
+- Backend: Use different port with `--port 8001`
+
+## Project Structure
+
+```
+HeartSense/
+├── backend/              # FastAPI backend
+│   ├── main.py          # API routes
+│   ├── services/        # Business logic
+│   ├── models/          # Data schemas
+│   └── database/        # SQL scripts
+├── pages/               # React page components
+├── components/          # Reusable React components
+├── services/            # Frontend API services
+└── types.ts             # TypeScript types
+```
+
+## API Endpoints
+
+- `POST /api/auth/signup` - Create new user
+- `POST /api/auth/signin` - Sign in user
+- `POST /api/chat/message` - Send message to AI partner
+- `GET /api/chat/history/{session_id}` - Get chat history
+- `GET /api/user/sessions` - Get all user sessions
+- `POST /api/analysis/tutor` - Get emotional intelligence analysis
+
+## Contributing
+
+1. Fork the repository
+2. Create your feature branch (`git checkout -b feature/AmazingFeature`)
+3. Commit your changes (`git commit -m 'Add some AmazingFeature'`)
+4. Push to the branch (`git push origin feature/AmazingFeature`)
+5. Open a Pull Request
+
+## License
+
+This project is licensed under the MIT License.
+
+## Support
+
+For issues and questions, please open an issue on GitHub.
 
 ---
 
-## 📝 License
-
-MIT License - feel free to use this project for learning and development!
+Made with 💝 by [Showrin Rahman](https://github.com/showrin20)
