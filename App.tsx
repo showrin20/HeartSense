@@ -10,6 +10,7 @@ import { TutorPage } from './pages/TutorPage';
 import { LandingPage } from './pages/LandingPage';
 import { AuthPage } from './pages/AuthPage';
 import { SessionsPage } from './pages/SessionsPage';
+import { AlertModal } from './components/Modal';
 
 export default function App() {
     const [messages, setMessages] = useState<Message[]>([]);
@@ -19,6 +20,13 @@ export default function App() {
     const [language, setLanguage] = useState<Language>('banglish');
     const [currentUser, setCurrentUser] = useState<User | null>(null);
     const [sessionId, setSessionId] = useState<string>('');
+    const [isResumedSession, setIsResumedSession] = useState<boolean>(false);
+    const [resumedSessionData, setResumedSessionData] = useState<ChatSession | null>(null);
+    const [errorModal, setErrorModal] = useState<{ isOpen: boolean; message: string; title: string }>({
+        isOpen: false,
+        message: '',
+        title: 'Error'
+    });
 
     // Check authentication on mount
     useEffect(() => {
@@ -83,7 +91,11 @@ export default function App() {
             setView('chatting');
         } catch (error) {
             console.error("Failed to initialize chat:", error);
-            alert("Failed to start chat session. Please try again.");
+            setErrorModal({
+                isOpen: true,
+                title: 'Session Error',
+                message: 'Failed to start chat session. Please try again.'
+            });
         } finally {
             setIsLoading(false);
         }
@@ -93,6 +105,8 @@ export default function App() {
         setMessages([]);
         setView('partner-setup');
         setAnalysis(null);
+        setIsResumedSession(false);
+        setResumedSessionData(null);
     };
 
     const handleNavigate = (section: string) => {
@@ -100,6 +114,23 @@ export default function App() {
             setView('landing');
             setMessages([]);
             setAnalysis(null);
+            setIsResumedSession(false);
+            setResumedSessionData(null);
+        } else if (section === 'about' || section === 'features' || section === 'contact') {
+            // If not on landing page, navigate to landing first, then scroll
+            if (view !== 'landing') {
+                setView('landing');
+                setMessages([]);
+                setAnalysis(null);
+                setIsResumedSession(false);
+                setResumedSessionData(null);
+                // Wait for view to change, then scroll
+                setTimeout(() => {
+                    const element = document.getElementById(section);
+                    element?.scrollIntoView({ behavior: 'smooth' });
+                }, 100);
+            }
+            // If already on landing, the Navbar will handle the scroll
         } else if (section === 'start') {
             if (!isAuthenticated()) {
                 setView('auth');
@@ -149,24 +180,34 @@ export default function App() {
         setIsLoading(true);
         try {
             setSessionId(selectedSessionId);
-            
+
             // Set language and personality from session if available
             if (session?.language) {
                 setLanguage(session.language);
             }
-            
+
             // Load chat history
             const { loadChatHistory } = await import('./services/geminiService');
             const history = await loadChatHistory(selectedSessionId);
-            
+
             // Set messages to the loaded history
             setMessages(history);
-            
+
+            // Mark as resumed session and store session data
+            if (history.length > 0) {
+                setIsResumedSession(true);
+                setResumedSessionData(session || null);
+            }
+
             // Navigate to chat view
             setView('chatting');
         } catch (error) {
             console.error('Failed to load session:', error);
-            alert('Failed to load session. Please try again.');
+            setErrorModal({
+                isOpen: true,
+                title: 'Session Error',
+                message: 'Failed to load session. Please try again.'
+            });
         } finally {
             setIsLoading(false);
         }
@@ -193,6 +234,9 @@ export default function App() {
                         isLoading={isLoading}
                         onSendMessage={handleUserInput}
                         onBackToSessions={() => setView('sessions')}
+                        isResumedSession={isResumedSession}
+                        resumedSessionData={resumedSessionData}
+                        onDismissResumeIndicator={() => setIsResumedSession(false)}
                     />
                 );
             case 'tutor':
@@ -219,6 +263,15 @@ export default function App() {
 
     return (
         <div className="bg-gradient-to-br from-rose-50 to-blue-100 min-h-screen text-gray-800 flex flex-col">
+            {/* Error Modal */}
+            <AlertModal
+                isOpen={errorModal.isOpen}
+                onClose={() => setErrorModal({ isOpen: false, message: '', title: 'Error' })}
+                title={errorModal.title}
+                message={errorModal.message}
+                type="error"
+            />
+            
             <Navbar 
                 onNavigate={handleNavigate} 
                 currentView={view}

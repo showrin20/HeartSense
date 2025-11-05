@@ -1,7 +1,8 @@
-import React from 'react';
+import React, { useState } from 'react';
 import type { Analysis, Language } from '../types';
 import { RefreshIcon } from '../components/icons/RefreshIcon';
 import { ShareIcon } from '../components/icons/ShareIcon';
+import { AlertModal } from '../components/Modal';
 
 interface TutorAnalysisProps {
     analysis: Analysis | null;
@@ -10,16 +11,26 @@ interface TutorAnalysisProps {
 }
 
 const AnalysisCard: React.FC<{ analysis: Analysis; language: Language }> = ({ analysis, language }) => {
+    const [shareModal, setShareModal] = useState(false);
     
     const handleShare = () => {
-        alert("To share, please take a screenshot of this report card!");
-        console.log("Share button clicked! Implement screenshot or Web Share API.");
+        setShareModal(true);
     };
 
     const isBanglish = language === 'banglish';
 
     return (
-        <div id="report-card" className="bg-gradient-to-br from-rose-50 via-white to-teal-50 p-6 md:p-8 rounded-2xl shadow-2xl border-4 border-rose-300 w-full">
+        <>
+            <AlertModal
+                isOpen={shareModal}
+                onClose={() => setShareModal(false)}
+                title="Share Your Report"
+                message="To share your love report card, please take a screenshot of this page and share it on your favorite social media platform! 📸💝"
+                type="info"
+                buttonText="Got it!"
+            />
+            
+            <div id="report-card" className="bg-gradient-to-br from-rose-50 via-white to-teal-50 p-6 md:p-8 rounded-2xl shadow-2xl border-4 border-rose-300 w-full">
             <div className="text-center pb-4 border-b-2 border-dashed border-rose-300">
                 <h2 className={`text-3xl font-bold text-rose-500 ${isBanglish ? 'font-bengali' : ''}`}>
                     {isBanglish ? 'ভালোবাসার রিপোর্ট কার্ড' : 'Your Tutor Report'}
@@ -76,6 +87,7 @@ const AnalysisCard: React.FC<{ analysis: Analysis; language: Language }> = ({ an
                 </div>
             )}
         </div>
+        </>
     );
 };
 

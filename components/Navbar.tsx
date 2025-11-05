@@ -17,11 +17,28 @@ export const Navbar: React.FC<NavbarProps> = ({
 }) => {
   const [menuOpen, setMenuOpen] = useState(false);
 
+  const scrollToSection = (sectionId: string) => {
+    const element = document.getElementById(sectionId);
+    if (element) {
+      element.scrollIntoView({ behavior: 'smooth' });
+    }
+  };
+
+  const handleNavigation = (section: string) => {
+    // If we're on landing page and clicking About/Features/Contact, scroll to section
+    if (currentView === 'landing' && ['about', 'features', 'contact'].includes(section)) {
+      scrollToSection(section);
+    } else {
+      // Otherwise use the normal navigation
+      onNavigate?.(section);
+    }
+  };
+
   const navItems = [
-    { id: 'home', label: 'Home' },
-    { id: 'about', label: 'About' },
-    { id: 'features', label: 'Features' },
-    ...(currentUser ? [{ id: 'sessions', label: 'My Sessions' }] : []),
+    { id: 'home', label: 'Home', icon: '🏠' },
+    { id: 'about', label: 'About', icon: '📖' },
+    { id: 'features', label: 'Features', icon: '✨' },
+    { id: 'contact', label: 'Contact', icon: '📧' },
   ];
 
   return (
@@ -41,14 +58,15 @@ export const Navbar: React.FC<NavbarProps> = ({
           {navItems.map((item) => (
             <button
               key={item.id}
-              onClick={() => onNavigate?.(item.id)}
-              className={`text-sm font-medium transition-colors ${
+              onClick={() => handleNavigation(item.id)}
+              className={`flex items-center gap-1.5 text-sm font-medium transition-colors ${
                 currentView === item.id
                   ? 'text-rose-600 border-b-2 border-rose-500 pb-1'
                   : 'text-gray-600 hover:text-rose-500'
               }`}
             >
-              {item.label}
+              <span>{item.icon}</span>
+              <span>{item.label}</span>
             </button>
           ))}
         </div>
@@ -130,37 +148,52 @@ export const Navbar: React.FC<NavbarProps> = ({
             <button
               key={item.id}
               onClick={() => {
-                onNavigate?.(item.id);
+                handleNavigation(item.id);
                 setMenuOpen(false);
               }}
-              className={`w-full text-left px-4 py-3 text-sm font-medium ${
+              className={`w-full text-left px-4 py-3 text-sm font-medium flex items-center gap-2 ${
                 currentView === item.id
                   ? 'bg-rose-50 text-rose-600'
                   : 'hover:bg-gray-50 text-gray-700'
               }`}
             >
-              {item.label}
+              <span>{item.icon}</span>
+              <span>{item.label}</span>
             </button>
           ))}
           {currentUser ? (
-            <button
-              onClick={() => {
-                onSignOut?.();
-                setMenuOpen(false);
-              }}
-              className="w-full text-left px-4 py-3 text-sm text-red-600 hover:bg-red-50"
-            >
-              Sign Out
-            </button>
+            <>
+              <button
+                onClick={() => {
+                  onNavigate?.('sessions');
+                  setMenuOpen(false);
+                }}
+                className="w-full text-left px-4 py-3 text-sm font-medium flex items-center gap-2 hover:bg-gray-50 text-gray-700"
+              >
+                <span>📚</span>
+                <span>My Sessions</span>
+              </button>
+              <button
+                onClick={() => {
+                  onSignOut?.();
+                  setMenuOpen(false);
+                }}
+                className="w-full text-left px-4 py-3 text-sm text-red-600 hover:bg-red-50 flex items-center gap-2"
+              >
+                <span>🚪</span>
+                <span>Sign Out</span>
+              </button>
+            </>
           ) : (
             <button
               onClick={() => {
                 onNavigate?.('start');
                 setMenuOpen(false);
               }}
-              className="w-full text-left px-4 py-3 text-sm font-semibold text-rose-600 hover:bg-rose-50"
+              className="w-full text-left px-4 py-3 text-sm font-semibold text-rose-600 hover:bg-rose-50 flex items-center gap-2"
             >
-              Get Started
+              <span>🚀</span>
+              <span>Get Started</span>
             </button>
           )}
         </div>
