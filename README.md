@@ -47,8 +47,8 @@ cd HeartSense
 ```bash
 cd backend
 
-# Create virtual environment (recommended)
-python3 -m venv venv
+# Create a virtual environment (requires Python ≥ 3.11)
+python3.11 -m venv venv
 source venv/bin/activate  # On Windows: venv\Scripts\activate
 
 # Install packages
