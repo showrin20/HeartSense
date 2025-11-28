@@ -69,9 +69,13 @@ Edit `.env` with your actual credentials:
 # Gemini API Key
 GEMINI_API_KEY=your_gemini_api_key_here
 
+<!-- Project Settings → API → Project URL (copy this)
+Project Settings → API → service_role key (copy this, NOT the anon key)
+Project Settings → Database → Connection String → URI (copy this) -->
+
 # Supabase Configuration
 SUPABASE_URL=https://your-project-ref.supabase.co
-SUPABASE_KEY=your_supabase_anon_key_here
+SUPABASE_KEY=service_role_key
 
 # Supabase Database Connection (use POOLER for production)
 SUPABASE_DB_URL=postgresql://postgres.your-project-ref:your-password@aws-0-region.pooler.supabase.com:6543/postgres
