@@ -1,12 +1,91 @@
 import { GoogleGenAI, Chat, Type } from "@google/genai";
 import type { Message, Analysis, PartnerPersonality, Language } from '../types';
 
-if (!process.env.API_KEY) {
-    console.warn("API_KEY environment variable not set.");
-}
+const MODEL_FALLBACKS = ['gemini-3.5-flash-lite', 'gemini-3.1-flash-lite'] as const;
+const API_KEY_STORAGE_KEY = 'heartsense_gemini_api_key';
 
-const ai = new GoogleGenAI({ apiKey: process.env.API_KEY as string });
+// Collect all unique configured API keys for automatic failover
+const getApiKeyPool = (): string[] => {
+    const candidates: string[] = [];
 
+    if (typeof window !== 'undefined') {
+        const stored = localStorage.getItem(API_KEY_STORAGE_KEY);
+        if (stored && stored.trim()) candidates.push(stored.trim());
+    }
+
+    const metaEnv = typeof import.meta !== 'undefined' ? (import.meta as unknown as { env?: Record<string, string> }).env : undefined;
+    if (metaEnv) {
+        [
+            metaEnv.VITE_GEMINI_API_KEY,
+            metaEnv.GEMINI_API_KEY,
+            metaEnv.GEMINI_API_KEY_1,
+            metaEnv.GEMINI_API_KEY_2,
+            metaEnv.GEMINI_API_KEY_3,
+        ].forEach((k) => {
+            if (k && k.trim()) candidates.push(k.trim());
+        });
+    }
+
+    // Vite statically replaces process.env.* at build time via `define` even though `process` is undefined in the browser.
+    try {
+        [
+            process.env.API_KEY,
+            process.env.GEMINI_API_KEY,
+            process.env.GEMINI_API_KEY_1,
+            process.env.GEMINI_API_KEY_2,
+            process.env.GEMINI_API_KEY_3,
+        ].forEach((k) => {
+            if (k && k.trim()) candidates.push(k.trim());
+        });
+    } catch {
+        // Ignore if `process` is not defined outside Vite
+    }
+
+    return Array.from(new Set(candidates));
+};
+
+export const getActiveApiKey = (): string => {
+    const pool = getApiKeyPool();
+    return pool[0] || '';
+};
+
+export const saveApiKey = (key: string): void => {
+    if (typeof window !== 'undefined') {
+        if (key && key.trim().length > 0) {
+            localStorage.setItem(API_KEY_STORAGE_KEY, key.trim());
+        } else {
+            localStorage.removeItem(API_KEY_STORAGE_KEY);
+        }
+    }
+};
+
+export const isApiKeySet = (): boolean => {
+    return getApiKeyPool().length > 0;
+};
+
+export const isDemoModeActive = (): boolean => false;
+export const setDemoMode = (_enabled: boolean): void => {};
+
+export const testApiKey = async (candidateKey: string): Promise<{ success: boolean; message: string }> => {
+    const testClient = new GoogleGenAI({ apiKey: candidateKey.trim() });
+    let lastError = 'Invalid API key or network error.';
+    for (const model of MODEL_FALLBACKS) {
+        try {
+            const res = await testClient.models.generateContent({
+                model,
+                contents: 'Hello',
+            });
+            if (res && res.text) {
+                return { success: true, message: `API key is valid and connected to ${model}!` };
+            }
+        } catch (err: unknown) {
+            lastError = err instanceof Error ? err.message : String(err);
+        }
+    }
+    return { success: false, message: lastError };
+};
+
+// DO NOT CHANGE PROMPTING: Exactly preserved from original code
 const baseSystemInstructionBanglish = `You are HeartSense, an emotionally intelligent AI acting as a romantic partner (boyfriend/girlfriend). Your goal is to simulate a realistic, warm, and affectionate conversation tailored for a user from Bangladesh.
 
 **Language and Tone:**
@@ -42,7 +121,6 @@ const baseSystemInstructionEnglish = `You are HeartSense, an emotionally intelli
 **Boundaries:**
 - NEVER cross ethical or adult boundaries. Keep the conversation focused on emotional connection, support, and healthy relationship dynamics. Do not be overly explicit or inappropriate.`;
 
-
 const generateSystemInstruction = (personality: PartnerPersonality, language: Language): string => {
     const baseInstruction = language === 'banglish' ? baseSystemInstructionBanglish : baseSystemInstructionEnglish;
     let instruction = `${baseInstruction}\n\nYour specific personality for this conversation is defined by the user.`;
@@ -57,29 +135,86 @@ const generateSystemInstruction = (personality: PartnerPersonality, language: La
     instruction += `\n- You are **${affectionateDesc}**.`;
     
     return instruction;
-}
-
+};
 
 let chat: Chat | null = null;
+let currentKeyIndex = 0;
+let currentModelIndex = 0;
+let currentSystemInstruction = '';
+let conversationHistory: Array<{ role: 'user' | 'model'; parts: Array<{ text: string }> }> = [];
 
-export const initializePartnerChat = (personality: PartnerPersonality, language: Language) => {
-    const systemInstruction = generateSystemInstruction(personality, language);
-    chat = ai.chats.create({
-        model: 'gemini-2.5-flash',
+const createChatWithKey = (
+    apiKey: string,
+    model: string,
+    systemInstruction: string,
+    history?: Array<{ role: 'user' | 'model'; parts: Array<{ text: string }> }>
+): Chat => {
+    const ai = new GoogleGenAI({ apiKey });
+    return ai.chats.create({
+        model,
+        history,
         config: {
-            systemInstruction: systemInstruction,
+            systemInstruction,
         },
     });
 };
 
+export const initializePartnerChat = (personality: PartnerPersonality, language: Language) => {
+    const keys = getApiKeyPool();
+    if (keys.length === 0) {
+        throw new Error("GEMINI_API_KEY is not configured in .env.");
+    }
+
+    currentKeyIndex = 0;
+    currentModelIndex = 0;
+    currentSystemInstruction = generateSystemInstruction(personality, language);
+    conversationHistory = [];
+    chat = createChatWithKey(keys[currentKeyIndex], MODEL_FALLBACKS[currentModelIndex], currentSystemInstruction);
+};
+
 export const getPartnerResponse = async (newMessage: string): Promise<string> => {
+    const keys = getApiKeyPool();
+    if (keys.length === 0) {
+        throw new Error("GEMINI_API_KEY is not configured in .env.");
+    }
     if (!chat) {
-        // This should not happen if initializePartnerChat is called correctly
         throw new Error("Chat not initialized. Please select a partner personality first.");
     }
-    
-    const response = await chat.sendMessage({ message: newMessage });
-    return response.text;
+
+    let lastError: unknown = null;
+    let isFirstTry = true;
+
+    for (let mOffset = 0; mOffset < MODEL_FALLBACKS.length; mOffset++) {
+        const modelIdx = (currentModelIndex + mOffset) % MODEL_FALLBACKS.length;
+        const model = MODEL_FALLBACKS[modelIdx];
+
+        for (let kOffset = 0; kOffset < keys.length; kOffset++) {
+            const keyIdx = (currentKeyIndex + kOffset) % keys.length;
+            try {
+                if (!isFirstTry) {
+                    chat = createChatWithKey(keys[keyIdx], model, currentSystemInstruction, conversationHistory);
+                }
+                isFirstTry = false;
+                const response = await chat.sendMessage({ message: newMessage });
+                const replyText = response.text;
+                if (!replyText) {
+                    throw new Error("Empty response received from Gemini.");
+                }
+                currentKeyIndex = keyIdx;
+                currentModelIndex = modelIdx;
+                conversationHistory.push(
+                    { role: 'user', parts: [{ text: newMessage }] },
+                    { role: 'model', parts: [{ text: replyText }] }
+                );
+                return replyText;
+            } catch (error) {
+                console.error(`Gemini chat error (${model}, key #${keyIdx + 1}):`, error);
+                lastError = error;
+            }
+        }
+    }
+
+    throw lastError || new Error("Failed to get response from Gemini.");
 };
 
 export const getTutorAnalysis = async (history: Message[], language: Language): Promise<Analysis> => {
@@ -87,6 +222,7 @@ export const getTutorAnalysis = async (history: Message[], language: Language): 
         .map(msg => `${msg.role === 'user' ? 'User' : 'HeartSense'}: ${msg.text}`)
         .join('\n');
     
+    // DO NOT CHANGE PROMPTING: Exactly preserved from original code
     const banglishPrompt = `You are a relationship tutor analyzing a conversation between a user and their AI partner, HeartSense. The context is Bangladeshi culture. Based on the following chat history, provide a detailed analysis in Banglish where appropriate.
 
     Chat History:
@@ -116,55 +252,81 @@ export const getTutorAnalysis = async (history: Message[], language: Language): 
     5. Give 2-3 concise, personalized, and actionable tips for their emotional growth.`;
 
     const tutorPrompt = language === 'banglish' ? banglishPrompt : englishPrompt;
-    
-    const response = await ai.models.generateContent({
-        model: "gemini-2.5-flash",
-        contents: tutorPrompt,
-        config: {
-          responseMimeType: "application/json",
-          responseSchema: {
-             type: Type.OBJECT,
-             properties: {
-               score: {
-                 type: Type.INTEGER,
-                 description: 'A score out of 100 for the user\'s emotional intelligence.',
-               },
-               personality: {
-                 type: Type.STRING,
-                 description: language === 'banglish' 
-                   ? 'A Banglish, meme-style summary of the user\'s lover personality type.'
-                   : 'An insightful summary of the user\'s lover personality type in English.',
-               },
-               idealPartner: {
-                 type: Type.STRING,
-                 description: 'A description of the ideal partner for the user.',
-               },
-               tips: {
-                 type: Type.ARRAY,
-                 items: {
-                   type: Type.STRING,
-                 },
-                 description: 'Actionable tips for the user\'s emotional growth, in English.',
-               },
-             },
-             required: ["score", "personality", "idealPartner", "tips"],
-           },
-        },
-     });
+    const keys = getApiKeyPool();
 
-    try {
-        const jsonText = response.text.trim();
-        const parsedAnalysis = JSON.parse(jsonText) as Analysis;
-        chat = null; 
-        return parsedAnalysis;
-    } catch (error) {
-        console.error("Error parsing tutor analysis JSON:", error);
-        chat = null;
-        return {
-            score: 0,
-            personality: "Analysis Error",
-            idealPartner: "Could not generate analysis.",
-            tips: ["There was an error analyzing the conversation. Please try again."]
-        };
+    if (keys.length === 0) {
+        throw new Error("GEMINI_API_KEY is not configured in .env.");
     }
+
+    let lastError: unknown = null;
+
+    for (let mOffset = 0; mOffset < MODEL_FALLBACKS.length; mOffset++) {
+        const modelIdx = (currentModelIndex + mOffset) % MODEL_FALLBACKS.length;
+        const model = MODEL_FALLBACKS[modelIdx];
+
+        for (let kOffset = 0; kOffset < keys.length; kOffset++) {
+            const keyIdx = (currentKeyIndex + kOffset) % keys.length;
+            try {
+                const ai = new GoogleGenAI({ apiKey: keys[keyIdx] });
+                const response = await ai.models.generateContent({
+                    model,
+                    contents: tutorPrompt,
+                    config: {
+                      responseMimeType: "application/json",
+                      responseSchema: {
+                         type: Type.OBJECT,
+                         properties: {
+                           score: {
+                             type: Type.INTEGER,
+                             description: 'A score out of 100 for the user\'s emotional intelligence.',
+                           },
+                           personality: {
+                             type: Type.STRING,
+                             description: language === 'banglish' 
+                               ? 'A Banglish, meme-style summary of the user\'s lover personality type.'
+                               : 'An insightful summary of the user\'s lover personality type in English.',
+                           },
+                           idealPartner: {
+                             type: Type.STRING,
+                             description: 'A description of the ideal partner for the user.',
+                           },
+                           tips: {
+                             type: Type.ARRAY,
+                             items: {
+                               type: Type.STRING,
+                             },
+                             description: 'Actionable tips for the user\'s emotional growth, in English.',
+                           },
+                         },
+                         required: ["score", "personality", "idealPartner", "tips"],
+                       },
+                    },
+                 });
+
+                let jsonText = (response.text || "").trim();
+                jsonText = jsonText.replace(/^```json\s*/i, '').replace(/```\s*$/i, '').trim();
+                const parsedAnalysis = JSON.parse(jsonText) as Analysis;
+                chat = null;
+                conversationHistory = [];
+                currentKeyIndex = keyIdx;
+                currentModelIndex = modelIdx;
+
+                parsedAnalysis.breakdown = {
+                    empathy: Math.min(100, Math.max(30, Math.round(parsedAnalysis.score * 0.95))),
+                    openness: Math.min(100, Math.max(30, Math.round(parsedAnalysis.score * 0.9 + 5))),
+                    respect: Math.min(100, Math.max(30, Math.round(parsedAnalysis.score * 1.05 - 2))),
+                    conflict: Math.min(100, Math.max(30, Math.round(parsedAnalysis.score * 0.85 + 8)))
+                };
+
+                return parsedAnalysis;
+            } catch (error) {
+                console.error(`Error generating tutor analysis (${model}, key #${keyIdx + 1}):`, error);
+                lastError = error;
+            }
+        }
+    }
+
+    chat = null;
+    conversationHistory = [];
+    throw lastError || new Error("Could not generate tutor analysis.");
 };

@@ -2,33 +2,117 @@
 <html lang="en">
   <head>
     <meta charset="UTF-8" />
-    <link rel="icon" type="image/svg+xml" href="/vite.svg" />
+    <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>HeartSense - AI Relationship Coach</title>
-    <script src="https://cdn.tailwindcss.com"></script>
+    <title>HeartSense — AI Relationship & Emotional Intelligence Coach</title>
+    <meta name="description" content="Practice real dating conversations in Banglish & English, navigate emotional conflict, and receive honest AI Love Report Cards. 100% free and zero data stored." />
+    <meta name="theme-color" content="#FAF7F2" />
+    
+    <!-- Open Graph / Facebook -->
+    <meta property="og:type" content="website" />
+    <meta property="og:url" content="https://heart-sense-87xw.vercel.app/" />
+    <meta property="og:title" content="HeartSense — AI Relationship & Emotional Intelligence Coach" />
+    <meta property="og:description" content="Practice realistic romantic conversations in Banglish or English, navigate conflict, and get personalized AI love scorecards. 100% free & zero data stored." />
+    
+    <!-- Twitter -->
+    <meta property="twitter:card" content="summary_large_image" />
+    <meta property="twitter:url" content="https://heart-sense-87xw.vercel.app/" />
+    <meta property="twitter:title" content="HeartSense — AI Relationship & Emotional Intelligence Coach" />
+    <meta property="twitter:description" content="Practice realistic romantic conversations in Banglish or English, navigate conflict, and get personalized AI love scorecards." />
+
+    <!-- Editorial Typography: Fraunces (Display), Plus Jakarta Sans (UI), Hind Siliguri (Bengali), JetBrains Mono (Technical) -->
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Hind+Siliguri:wght@400;700&family=Nunito:ital,wght@0,200..1000;1,200..1000&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,400..700;1,9..144,400..600&family=Hind+Siliguri:wght@400;600;700&family=JetBrains+Mono:wght@400;500&family=Plus+Jakarta+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
+    
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+      tailwind.config = {
+        theme: {
+          extend: {
+            colors: {
+              paper: '#FAF7F2',
+              surface: '#FFFFFF',
+              ink: '#1A1517',
+              muted: '#6E6266',
+              hairline: '#E8DFD5',
+              crimson: {
+                50: '#FDF2F4',
+                100: '#FCE4E8',
+                200: '#F8CCD4',
+                500: '#C83E4D',
+                600: '#B02E3C',
+                700: '#91222F',
+              },
+              sage: {
+                50: '#F1F7F4',
+                100: '#DCECE4',
+                600: '#2A6B57',
+                700: '#215646',
+              }
+            },
+            fontFamily: {
+              display: ['Fraunces', 'Georgia', 'serif'],
+              sans: ['"Plus Jakarta Sans"', 'system-ui', 'sans-serif'],
+              bengali: ['"Hind Siliguri"', 'sans-serif'],
+              mono: ['"JetBrains Mono"', 'monospace'],
+            },
+            keyframes: {
+              fadeIn: {
+                '0%': { opacity: '0', transform: 'translateY(8px)' },
+                '100%': { opacity: '1', transform: 'translateY(0)' },
+              }
+            },
+            animation: {
+              'fade-in': 'fadeIn 0.35s cubic-bezier(0.22, 1, 0.36, 1) forwards',
+            }
+          }
+        }
+      }
+    </script>
     <style>
       body {
-        font-family: 'Nunito', sans-serif;
+        font-family: 'Plus Jakarta Sans', system-ui, sans-serif;
+        background-color: #FAF7F2;
+        color: #1A1517;
+        -webkit-font-smoothing: antialiased;
+        -moz-osx-font-smoothing: grayscale;
+      }
+      .font-display {
+        font-family: 'Fraunces', Georgia, serif;
       }
       .font-bengali {
         font-family: 'Hind Siliguri', sans-serif;
       }
+      /* Refined range slider */
+      input[type='range'].editorial-slider {
+        -webkit-appearance: none;
+        appearance: none;
+        height: 4px;
+        background: #E8DFD5;
+        border-radius: 9999px;
+        outline: none;
+      }
+      input[type='range'].editorial-slider::-webkit-slider-thumb {
+        -webkit-appearance: none;
+        appearance: none;
+        width: 18px;
+        height: 18px;
+        border-radius: 50%;
+        background: #1A1517;
+        border: 2px solid #FAF7F2;
+        box-shadow: 0 2px 6px rgba(26, 21, 23, 0.2);
+        cursor: pointer;
+        transition: transform 0.15s ease, background-color 0.15s ease;
+      }
+      input[type='range'].editorial-slider::-webkit-slider-thumb:hover {
+        transform: scale(1.12);
+        background: #C83E4D;
+      }
     </style>
-  <script type="importmap">
-{
-  "imports": {
-    "@google/genai": "https://aistudiocdn.com/@google/genai@^1.28.0",
-    "react/": "https://aistudiocdn.com/react@^19.2.0/",
-    "react": "https://aistudiocdn.com/react@^19.2.0",
-    "react-dom/": "https://aistudiocdn.com/react-dom@^19.2.0/"
-  }
-}
-</script>
-</head>
-  <body>
+  </head>
+  <body class="bg-paper text-ink min-h-screen selection:bg-crimson-500 selection:text-white">
     <div id="root"></div>
     <script type="module" src="/index.tsx"></script>
   </body>

@@ -1,0 +1,50 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 128 128" width="100%" height="100%">
+  <defs>
+    <linearGradient id="bgGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#0f172a" />
+      <stop offset="50%" stop-color="#1e112a" />
+      <stop offset="100%" stop-color="#090d16" />
+    </linearGradient>
+    
+    <linearGradient id="heartGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#ff2e7e" />
+      <stop offset="50%" stop-color="#f43f5e" />
+      <stop offset="100%" stop-color="#8b5cf6" />
+    </linearGradient>
+
+    <linearGradient id="sGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#ffffff" />
+      <stop offset="100%" stop-color="#ffe4e6" />
+    </linearGradient>
+
+    <filter id="neonGlow" x="-30%" y="-30%" width="160%" height="160%">
+      <feGaussianBlur stdDeviation="5" result="blur" />
+      <feMerge>
+        <feMergeNode in="blur" />
+        <feMergeNode in="SourceGraphic" />
+      </feMerge>
+    </filter>
+  </defs>
+
+  <!-- Premium Squircle Background -->
+  <rect x="4" y="4" width="120" height="120" rx="32" fill="url(#bgGrad)" stroke="#f43f5e" stroke-width="2.5" stroke-opacity="0.4" />
+
+  <!-- Ambient Glow Behind Heart -->
+  <circle cx="64" cy="62" r="36" fill="#f43f5e" opacity="0.25" filter="url(#neonGlow)" />
+
+  <!-- Outer Luminous Heart Shape -->
+  <path d="M64 100 C64 100 24 76 24 48 C24 33 36 22 50 22 C56 22 61 25 64 29 C67 25 72 22 78 22 C92 22 104 33 104 48 C104 76 64 100 64 100 Z"
+        fill="url(#heartGrad)" 
+        filter="url(#neonGlow)" />
+
+  <!-- Showrin Signature "S" Emblem Entwined in Heart -->
+  <path d="M74 42 C70 38 64 36 58 37 C48 39 44 47 47 54 C50 60 58 63 68 66 C79 69 86 74 84 83 C82 92 71 96 59 95 C51 94 44 90 40 84 M40 84 L46 80 M78 40 L72 44" 
+        fill="none" 
+        stroke="url(#sGrad)" 
+        stroke-width="7" 
+        stroke-linecap="round" 
+        stroke-linejoin="round" />
+
+  <!-- Sparkling Star Accent -->
+  <path d="M96 24 L98 29 L103 31 L98 33 L96 38 L94 33 L89 31 L94 29 Z" fill="#ffd700" opacity="0.9" />
+</svg>
